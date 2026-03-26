@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080b12;
+  --surface: #0e1219;
+  --surface2: #141820;
+  --surface3: #1a1f2a;
+  --border: #1e2535;
+  --border2: #252d3d;
+  --gold: #c8a96e;
+  --gold2: #e8c98a;
+  --blue: #5b9cf6;
+  --green: #4ade9a;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --text: #ddd8ce;
+  --text2: #9ca3af;
+  --text3: #5a6374;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif; min-height:100vh; overflow-x:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; z-index:0;
+  background: radial-gradient(ellipse 100% 60% at 20% 0%,rgba(200,169,110,0.06) 0%,transparent 60%),
+              radial-gradient(ellipse 80% 50% at 80% 100%,rgba(91,156,246,0.05) 0%,transparent 60%);
+  pointer-events:none;
+}
+body::after {
+  content:''; position:fixed; inset:0; z-index:0;
+  background-image: linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);
+  background-size:40px 40px; pointer-events:none;
+}
+.wrapper { position:relative; z-index:1; }
+
+/* TICKER */
+.ticker-wrap {
+  background:linear-gradient(90deg,var(--surface2),#111827);
+  border-bottom:1px solid var(--border2);
+  overflow:hidden; display:flex; align-items:stretch; height:38px;
+  position:sticky; top:0; z-index:100;
+}
+.ticker-label {
+  background:var(--gold); color:var(--bg);
+  font-size:0.65rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  padding:0 16px; display:flex; align-items:center; flex-shrink:0; white-space:nowrap;
+}
+.ticker-cat-btn {
+  background:var(--surface3); border:none; border-right:1px solid var(--border2);
+  color:var(--text3); font-size:0.67rem; font-family:'Outfit',sans-serif;
+  padding:0 12px; cursor:pointer; white-space:nowrap; transition:all 0.2s; letter-spacing:0.04em;
+}
+.ticker-cat-btn.active { color:var(--gold); background:rgba(200,169,110,0.08); }
+.ticker-cat-btn:hover { color:var(--text); }
+.ticker-track { flex:1; overflow:hidden; display:flex; align-items:center; }
+.ticker-inner { display:flex; gap:0; white-space:nowrap; animation:tickAnim 70s linear infinite; }
+.ticker-inner:hover { animation-play-state:paused; }
+@keyframes tickAnim { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.ticker-item {
+  display:inline-flex; align-items:center; padding:0 26px;
+  font-size:0.77rem; color:var(--text2); cursor:pointer; transition:color 0.2s;
+  border-right:1px solid var(--border);
+}
+.ticker-item:hover { color:var(--gold2); }
+.ticker-item::before { content:'◆'; color:var(--gold); margin-right:9px; font-size:0.42rem; }
+
+/* HEADER */
+.header {
+  padding:26px 32px 18px; display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom:1px solid var(--border);
+}
+.greeting { font-family:'Cormorant Garamond',serif; font-size:2.7rem; font-weight:300; color:var(--text); line-height:1; }
+.greeting em { font-style:italic; color:var(--gold); }
+.date-row { display:flex; align-items:center; gap:14px; margin-top:8px; }
+.date-str { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; }
+.clock { font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.06em; }
+.hdiv { width:1px; height:11px; background:var(--border2); }
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.ms-btn {
+  display:flex; align-items:center; gap:9px; background:var(--surface2);
+  border:1px solid var(--border2); color:var(--text); padding:9px 18px; border-radius:10px;
+  cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:500; transition:all 0.25s;
+}
+.ms-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(200,169,110,0.07); }
+.user-badge { display:none; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border2); padding:7px 14px 7px 10px; border-radius:10px; }
+.avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:var(--bg); }
+.uname { font-size:0.82rem; font-weight:500; }
+.uemail { font-size:0.68rem; color:var(--text3); }
+.so-btn { background:none; border:none; color:var(--text3); cursor:pointer; font-size:0.7rem; padding:3px 7px; border-radius:5px; transition:color 0.2s; font-family:'Outfit',sans-serif; }
+.so-btn:hover { color:var(--red); }
+
+/* GRID */
+.main { padding:18px 32px 32px; display:grid; grid-template-columns:270px 1fr 1fr; grid-template-rows:auto auto; gap:14px; }
+
+/* CARDS */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; position:relative; overflow:hidden; transition:border-color 0.3s; }
+.card:hover { border-color:var(--border2); }
+.card-shine { position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent 0%,rgba(200,169,110,0.2) 40%,rgba(91,156,246,0.12) 70%,transparent 100%); }
+.clabel { display:flex; align-items:center; gap:7px; font-size:0.62rem; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--text3); margin-bottom:14px; }
+.clabel-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.clabel-row .clabel { margin-bottom:0; }
+.dot5 { width:5px; height:5px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.ref-btn { background:none; border:1px solid var(--border2); color:var(--text3); border-radius:7px; padding:3px 9px; font-size:0.7rem; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.2s; }
+.ref-btn:hover { color:var(--blue); border-color:var(--blue); }
+
+/* WEATHER */
+.w-card { grid-column:1; grid-row:1; }
+.w-hero { display:flex; align-items:flex-start; gap:12px; margin-bottom:16px; }
+.w-icon { font-size:3rem; line-height:1; filter:drop-shadow(0 0 10px rgba(200,169,110,0.25)); }
+.w-temp { font-family:'Cormorant Garamond',serif; font-size:3.6rem; font-weight:300; line-height:1; }
+.w-temp sup { font-size:1.3rem; color:var(--text3); vertical-align:top; margin-top:7px; }
+.w-city { font-size:0.72rem; color:var(--gold); font-weight:600; letter-spacing:0.08em; margin-top:4px; }
+.w-desc { font-size:0.8rem; color:var(--text2); margin-top:2px; }
+.w-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.w-stat { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px 12px; }
+.w-val { font-size:0.95rem; font-weight:500; }
+.w-key { font-size:0.65rem; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
+.uv-wrap { margin-top:12px; }
+.uv-top { font-size:0.65rem; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; display:flex; justify-content:space-between; }
+.uv-bar { height:5px; border-radius:3px; background:linear-gradient(90deg,#4ade80,#facc15,#f97316,#ef4444); position:relative; }
+.uv-needle { position:absolute; top:-4px; width:3px; height:13px; background:white; border-radius:2px; transform:translateX(-50%); box-shadow:0 0 6px rgba(255,255,255,0.5); }
+
+/* CALENDAR */
+.cal-card { grid-column:2; grid-row:1; }
+.ev-item { display:flex; align-items:stretch; gap:11px; padding:8px 9px; border-radius:10px; transition:background 0.2s; }
+.ev-item:hover { background:var(--surface2); }
+.ev-time { display:flex; flex-direction:column; align-items:flex-end; min-width:42px; padding-top:1px; }
+.ev-s { font-family:'DM Mono',monospace; font-size:0.66rem; color:var(--gold); }
+.ev-e { font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--text3); margin-top:1px; }
+.ev-bar { width:2px; border-radius:2px; flex-shrink:0; }
+.ev-title { font-size:0.84rem; font-weight:500; line-height:1.3; }
+.ev-sub { font-size:0.7rem; color:var(--text3); margin-top:3px; }
+.ev-badge { margin-left:auto; align-self:flex-start; font-size:0.58rem; padding:2px 7px; border-radius:20px; border:1px solid; white-space:nowrap; flex-shrink:0; }
+
+/* TASKS */
+.tasks-card { grid-column:3; grid-row:1; }
+.task-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+.task-item:last-child { border-bottom:none; }
+.task-cb { width:17px; height:17px; border-radius:5px; border:1.5px solid var(--border2); flex-shrink:0; margin-top:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.task-cb:hover { border-color:var(--green); }
+.task-cb.chk { background:var(--green); border-color:var(--green); }
+.task-cb.chk::after { content:'✓'; font-size:10px; color:var(--bg); font-weight:700; }
+.task-title { font-size:0.84rem; color:var(--text); line-height:1.4; }
+.task-title.done { text-decoration:line-through; color:var(--text3); }
+.task-meta { font-size:0.68rem; color:var(--text3); margin-top:2px; }
+
+/* AI */
+.ai-card { grid-column:1/3; grid-row:2; }
+.ai-body { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.ai-sec { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 15px; }
+.ai-sec-title { font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.13em; color:var(--gold); margin-bottom:9px; }
+.ai-text { font-size:0.82rem; color:var(--text2); line-height:1.65; }
+.focus-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.focus-pill { background:rgba(91,156,246,0.1); border:1px solid rgba(91,156,246,0.2); color:var(--blue); border-radius:20px; padding:4px 12px; font-size:0.74rem; }
+
+/* NEWS */
+.news-card { grid-column:3; grid-row:2; }
+.ntabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:11px; }
+.ntab { padding:3px 10px; border-radius:20px; font-size:0.66rem; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--text3); font-family:'Outfit',sans-serif; transition:all 0.2s; font-weight:500; }
+.ntab.active { background:var(--gold); color:var(--bg); border-color:var(--gold); }
+.ntab:hover:not(.active) { color:var(--text); }
+.nscroll { max-height:300px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.nitem { padding:9px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:all 0.15s; }
+.nitem:last-child { border-bottom:none; }
+.nitem:hover .nhead { color:var(--gold2); }
+.nhead { font-size:0.82rem; font-weight:500; line-height:1.4; color:var(--text); transition:color 0.15s; }
+.nmeta { font-size:0.67rem; color:var(--text3); margin-top:4px; display:flex; gap:8px; }
+.nsrc { color:var(--blue); }
+
+/* UTILS */
+.loader { display:flex; gap:5px; align-items:center; padding:22px 0; justify-content:center; }
+.loader span { width:7px; height:7px; border-radius:50%; background:var(--gold); animation:ldot 1.2s infinite ease-in-out; }
+.loader span:nth-child(2) { animation-delay:.2s; background:var(--blue); }
+.loader span:nth-child(3) { animation-delay:.4s; background:var(--green); }
+@keyframes ldot { 0%,80%,100%{transform:scale(0.5);opacity:0.3} 40%{transform:scale(1.1);opacity:1} }
+.empty { color:var(--text3); font-size:0.82rem; text-align:center; padding:22px 0; }
+.sarea { max-height:240px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.login-wall { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:26px 16px; text-align:center; gap:10px; }
+.login-wall p { color:var(--text3); font-size:0.8rem; line-height:1.5; }
+.sm-ms-btn { display:flex; align-items:center; gap:7px; background:rgba(200,169,110,0.08); border:1px solid rgba(200,169,110,0.3); color:var(--gold); padding:7px 16px; border-radius:8px; cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.77rem; font-weight:500; transition:all 0.2s; }
+.sm-ms-btn:hover { background:rgba(200,169,110,0.15); }
+.fade-in { animation:fi 0.35s ease forwards; }
+@keyframes fi { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-label">⚡ LIVE</div>
+  <button class="ticker-cat-btn active" data-cat="uae" onclick="switchTickerCat(this)">🇦🇪 UAE</button>
+  <button class="ticker-cat-btn" data-cat="india" onclick="switchTickerCat(this)">🇮🇳 India</button>
+  <button class="ticker-cat-btn" data-cat="world" onclick="switchTickerCat(this)">🌍 World</button>
+  <button class="ticker-cat-btn" data-cat="biz" onclick="switchTickerCat(this)">📈 Biz</button>
+  <button class="ticker-cat-btn" data-cat="tech" onclick="switchTickerCat(this)">⚡ Tech</button>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner"><span class="ticker-item">Loading headlines…</span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="greeting" id="greetingEl">Good <em>Morning</em></div>
+    <div class="date-row">
+      <span class="date-str" id="dateEl"></span>
+      <span class="hdiv"></span>
+      <span class="clock" id="clockEl"></span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="ms-btn" id="loginBtn" onclick="signIn()">
+      <svg width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Sign in with Microsoft
+    </button>
+    <div class="user-badge" id="userBadge">
+      <div class="avatar" id="userAvatar"></div>
+      <div><div class="uname" id="userNameEl"></div><div class="uemail" id="userEmailEl"></div></div>
+      <button class="so-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="main">
+
+  <!-- WEATHER -->
+  <div class="card w-card">
+    <div class="card-shine"></div>
+    <div class="clabel"><span class="dot5" style="background:var(--gold)"></span>Weather · Dubai</div>
+    <div id="weatherContent"><div class="loader"><span></span><span></span><span></span></div></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="card cal-card">
+    <div class="card-shine"></div>
+    <div class="clabel-row">
+      <div class="clabel"><span class="dot5" style="background:var(--blue)"></span>Today's Schedule</div>
+      <button class="ref-btn" onclick="loadCalendar()">↻</button>
+    </div>
+    <div id="calendarContent" class="sarea">
+      <div class="login-wall">
+        <p>Connect Microsoft to see your Outlook calendar</p>
+        <button class="sm-ms-btn" onclick="signIn()"><svg width="13" height="13" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="card tasks-card">
+    <div class="card-shine"></div>
+    <div class="clabel-row">
+      <div class="clabel"><span class="dot5" style="background:var(--green)"></span>Planner Tasks</div>
+      <button class="ref-btn" onclick="loadTasks()">↻</button>
+    </div>
+    <div id="tasksContent" class="sarea">
+      <div class="login-wall">
+        <p>Connect Microsoft to see your Planner tasks</p>
+        <button class="sm-ms-btn" onclick="signIn()"><svg width="13" height="13" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI -->
+  <div class="card ai-card">
+    <div class="card-shine"></div>
+    <div class="clabel-row">
+      <div class="clabel"><span class="dot5" style="background:var(--purple)"></span>AI Daily Briefing</div>
+      <button class="ref-btn" onclick="loadAI()">↻ Refresh</button>
+    </div>
+    <div id="aiContent"><div class="loader"><span></span><span></span><span></span></div></div>
+  </div>
+
+  <!-- NEWS -->
+  <div class="card news-card">
+    <div class="card-shine"></div>
+    <div class="clabel-row">
+      <div class="clabel"><span class="dot5" style="background:var(--red)"></span>News</div>
+      <button class="ref-btn" onclick="loadNews()">↻</button>
+    </div>
+    <div class="ntabs">
+      <button class="ntab active" data-cat="uae" onclick="switchNewsTab(this)">🇦🇪 UAE</button>
+      <button class="ntab" data-cat="india" onclick="switchNewsTab(this)">🇮🇳 India</button>
+      <button class="ntab" data-cat="world" onclick="switchNewsTab(this)">🌍 World</button>
+      <button class="ntab" data-cat="biz" onclick="switchNewsTab(this)">📈 Biz</button>
+      <button class="ntab" data-cat="tech" onclick="switchNewsTab(this)">⚡ Tech</button>
+    </div>
+    <div id="newsContent" class="nscroll"><div class="loader"><span></span><span></span><span></span></div></div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+//  CONFIG — add your keys here
+// ═══════════════════════════════════════
+const AZURE_CLIENT_ID   = "YOUR_AZURE_CLIENT_ID_HERE";
+const ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY_HERE";
+// ═══════════════════════════════════════
+
+// ── CLOCK ──
+function tick() {
+  const now = new Date();
+  const h = now.getHours();
+  document.getElementById('clockEl').textContent = now.toLocaleTimeString('en-AE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('dateEl').textContent  = now.toLocaleDateString('en-AE',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+  const [part, emoji] = h<5?['Night','🌙']:h<12?['Morning','🌅']:h<17?['Afternoon','☀️']:h<21?['Evening','🌆']:['Night','🌙'];
+  document.getElementById('greetingEl').innerHTML = `Good <em>${part}</em> ${emoji}`;
+}
+setInterval(tick, 1000); tick();
+
+// ── NEWS ──
+// Google News RSS — works without CORS issues via rss2json
+const FEEDS = {
+  uae:   'https://news.google.com/rss/search?q=UAE+Dubai&hl=en-AE&gl=AE&ceid=AE:en',
+  india: 'https://news.google.com/rss/search?q=India&hl=en-IN&gl=IN&ceid=IN:en',
+  world: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
+  biz:   'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB',
+  tech:  'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB'
+};
+
+let allNews = {uae:[],india:[],world:[],biz:[],tech:[]};
+let curNewsTab = 'uae', curTickerCat = 'uae';
+
+async function fetchFeed(url) {
+  // Try rss2json (most reliable, handles Google News well)
+  try {
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=10`, {signal:AbortSignal.timeout(8000)});
+    const d = await r.json();
+    if (d.status==='ok' && d.items?.length) {
+      return d.items.map(i=>({title:i.title.replace(/ - .*$/,''), link:i.link, source:i.author||d.feed?.title||'', date:i.pubDate}));
+    }
+  } catch {}
+  // Fallback: corsproxy.io
+  try {
+    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {signal:AbortSignal.timeout(9000)});
+    const txt = await r.text();
+    const xml = new DOMParser().parseFromString(txt,'text/xml');
+    return [...xml.querySelectorAll('item')].slice(0,10).map(i=>({
+      title: i.querySelector('title')?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/ - .*$/,'').trim()||'',
+      link:  i.querySelector('link')?.textContent?.trim()||'',
+      source: i.querySelector('source')?.textContent?.trim()||'',
+      date:  i.querySelector('pubDate')?.textContent?.trim()||''
+    })).filter(i=>i.title && i.title.length > 5);
+  } catch {}
+  return [];
+}
+
+async function loadNews() {
+  document.getElementById('newsContent').innerHTML = `<div class="loader"><span></span><span></span><span></span></div>`;
+  const work = Object.entries(FEEDS).map(async ([cat, url]) => {
+    allNews[cat] = await fetchFeed(url);
+  });
+  await Promise.all(work);
+  renderNews(curNewsTab);
+  renderTicker(curTickerCat);
+}
+
+function renderNews(cat) {
+  const el = document.getElementById('newsContent');
+  const items = allNews[cat]||[];
+  if (!items.length) { el.innerHTML=`<div class="empty">No headlines loaded — check connection</div>`; return; }
+  el.innerHTML = items.slice(0,10).map(i=>{
+    const ds = i.date ? new Date(i.date).toLocaleString('en-AE',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="nitem fade-in" onclick="window.open('${i.link}','_blank')">
+      <div class="nhead">${i.title}</div>
+      <div class="nmeta">${i.source?`<span class="nsrc">${i.source}</span>`:''}${ds?`<span>${ds}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function switchNewsTab(btn) {
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); curNewsTab = btn.dataset.cat; renderNews(curNewsTab);
+}
+
+function renderTicker(cat) {
+  const items = allNews[cat]||[]; if (!items.length) return;
+  const doubled = [...items,...items];
+  document.getElementById('tickerInner').innerHTML = doubled.map(i=>`<span class="ticker-item" onclick="window.open('${i.link}','_blank')">${i.title}</span>`).join('');
+}
+
+function switchTickerCat(btn) {
+  document.querySelectorAll('.ticker-cat-btn').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); curTickerCat = btn.dataset.cat;
+  if (allNews[curTickerCat]?.length) renderTicker(curTickerCat);
+}
+
+// ── WEATHER ──
+async function loadWeather() {
+  const el = document.getElementById('weatherContent');
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=25.2048&longitude=55.2708&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,uv_index&wind_speed_unit=kmh&timezone=Asia/Dubai');
+    const d = await r.json(); const c = d.current;
+    const icon = wIcon(c.weather_code), desc = wDesc(c.weather_code);
+    const uvPct = Math.min((c.uv_index/12)*100,100);
+    const uvLbl = c.uv_index<=2?'Low':c.uv_index<=5?'Moderate':c.uv_index<=7?'High':c.uv_index<=10?'Very High':'Extreme';
+    el.innerHTML = `
+      <div class="w-hero">
+        <div class="w-icon">${icon}</div>
+        <div><div class="w-temp">${Math.round(c.temperature_2m)}<sup>°C</sup></div><div class="w-city">DUBAI, UAE</div><div class="w-desc">${desc}</div></div>
+      </div>
+      <div class="w-grid">
+        <div class="w-stat"><div class="w-val">${Math.round(c.apparent_temperature)}°C</div><div class="w-key">Feels Like</div></div>
+        <div class="w-stat"><div class="w-val">${c.relative_humidity_2m}%</div><div class="w-key">Humidity</div></div>
+        <div class="w-stat"><div class="w-val">${c.wind_speed_10m} km/h</div><div class="w-key">Wind</div></div>
+        <div class="w-stat"><div class="w-val">UV ${c.uv_index}</div><div class="w-key">${uvLbl}</div></div>
+      </div>
+      <div class="uv-wrap">
+        <div class="uv-top"><span>UV Index</span><span>${uvLbl}</span></div>
+        <div class="uv-bar"><div class="uv-needle" style="left:${uvPct}%"></div></div>
+      </div>`;
+  } catch { el.innerHTML=`<div class="empty">Weather unavailable</div>`; }
+}
+function wIcon(c){if(c===0)return'☀️';if(c<=2)return'⛅';if(c<=3)return'☁️';if(c<=49)return'🌫️';if(c<=59)return'🌦️';if(c<=69)return'🌧️';if(c<=79)return'❄️';if(c<=82)return'🌧️';return'⛈️';}
+function wDesc(c){if(c===0)return'Clear Sky';if(c<=2)return'Partly Cloudy';if(c<=3)return'Overcast';if(c<=49)return'Foggy';if(c<=59)return'Drizzle';if(c<=69)return'Rain';if(c<=79)return'Snowfall';if(c<=82)return'Heavy Rain';return'Thunderstorm';}
+
+// ── MICROSOFT ──
+const SCOPES = ['User.Read','Calendars.Read','Tasks.Read'];
+let msalApp=null, currentUser=null;
+
+async function initMsal() {
+  if (AZURE_CLIENT_ID==='YOUR_AZURE_CLIENT_ID_HERE') return;
+  msalApp = new msal.PublicClientApplication({
+    auth:{clientId:AZURE_CLIENT_ID, authority:'https://login.microsoftonline.com/common', redirectUri:window.location.href.split('?')[0].split('#')[0]},
+    cache:{cacheLocation:'localStorage'}
+  });
+  await msalApp.initialize();
+  const accs = msalApp.getAllAccounts();
+  if (accs.length) { currentUser=accs[0]; showBadge(); loadCalendar(); loadTasks(); loadAI(); }
+}
+
+async function signIn() {
+  if (AZURE_CLIENT_ID==='YOUR_AZURE_CLIENT_ID_HERE') { alert('Please add your Azure Client ID in the CONFIG section.\n\nFinish the GitHub Pages setup first, then come back.'); return; }
+  if (!msalApp) await initMsal();
+  try { const r=await msalApp.loginPopup({scopes:SCOPES}); currentUser=r.account; showBadge(); loadCalendar(); loadTasks(); loadAI(); }
+  catch(e){console.error(e);}
+}
+
+function showBadge() {
+  document.getElementById('loginBtn').style.display='none';
+  document.getElementById('userBadge').style.display='flex';
+  const n=currentUser.name||currentUser.username;
+  document.getElementById('userNameEl').textContent=n;
+  document.getElementById('userEmailEl').textContent=currentUser.username;
+  document.getElementById('userAvatar').textContent=n.charAt(0).toUpperCase();
+}
+
+async function signOut() {
+  if(msalApp) await msalApp.logoutPopup();
+  currentUser=null;
+  document.getElementById('loginBtn').style.display='flex';
+  document.getElementById('userBadge').style.display='none';
+  const wall = id => `<div class="login-wall"><p>Connect Microsoft to see your data</p><button class="sm-ms-btn" onclick="signIn()"><svg width="13" height="13" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign in</button></div>`;
+  document.getElementById('calendarContent').innerHTML=wall();
+  document.getElementById('tasksContent').innerHTML=wall();
+}
+
+async function getToken() {
+  const req={scopes:SCOPES,account:currentUser};
+  try{return(await msalApp.acquireTokenSilent(req)).accessToken;}
+  catch{return(await msalApp.acquireTokenPopup(req)).accessToken;}
+}
+
+// ── CALENDAR ──
+const COLORS=['var(--gold)','var(--blue)','var(--green)','var(--purple)','var(--red)'];
+async function loadCalendar() {
+  if (!currentUser) return;
+  const el=document.getElementById('calendarContent');
+  el.innerHTML=`<div class="loader"><span></span><span></span><span></span></div>`;
+  try {
+    const token=await getToken();
+    const now=new Date();
+    const s=new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,0).toISOString();
+    const e=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59).toISOString();
+    const r=await fetch(`https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${s}&endDateTime=${e}&$orderby=start/dateTime&$top=12&$select=subject,start,end,location,isAllDay`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json(); const events=d.value||[];
+    if (!events.length){el.innerHTML=`<div class="empty">✨ No meetings today</div>`;return;}
+    el.innerHTML=events.map((ev,i)=>{
+      const col=COLORS[i%COLORS.length];
+      const st=new Date(ev.start.dateTime||ev.start.date);
+      const et=new Date(ev.end.dateTime||ev.end.date);
+      const ss=ev.isAllDay?'All day':st.toLocaleTimeString('en-AE',{hour:'2-digit',minute:'2-digit'});
+      const es=ev.isAllDay?'':et.toLocaleTimeString('en-AE',{hour:'2-digit',minute:'2-digit'});
+      const loc=ev.location?.displayName?`<div class="ev-sub">📍 ${ev.location.displayName}</div>`:'';
+      const n2=new Date(); const live=st<=n2&&et>=n2;
+      const badge=live?`<span class="ev-badge" style="color:var(--green);border-color:var(--green)">LIVE</span>`:'';
+      return `<div class="ev-item fade-in">
+        <div class="ev-time"><span class="ev-s">${ss}</span>${es?`<span class="ev-e">${es}</span>`:''}</div>
+        <div class="ev-bar" style="background:${col}"></div>
+        <div style="flex:1"><div class="ev-title">${ev.subject}</div>${loc}</div>
+        ${badge}
+      </div>`;
+    }).join('');
+  } catch(err){el.innerHTML=`<div class="empty">Could not load calendar</div>`;console.error(err);}
+}
+
+// ── TASKS ──
+async function loadTasks() {
+  if (!currentUser) return;
+  const el=document.getElementById('tasksContent');
+  el.innerHTML=`<div class="loader"><span></span><span></span><span></span></div>`;
+  try {
+    const token=await getToken();
+    const lr=await fetch('https://graph.microsoft.com/v1.0/me/todo/lists',{headers:{Authorization:`Bearer ${token}`}});
+    const ld=await lr.json(); const lists=(ld.value||[]).slice(0,4);
+    let tasks=[];
+    for (const list of lists) {
+      const tr=await fetch(`https://graph.microsoft.com/v1.0/me/todo/lists/${list.id}/tasks?$filter=status ne 'completed'&$top=6`,{headers:{Authorization:`Bearer ${token}`}});
+      const td=await tr.json();
+      (td.value||[]).forEach(t=>tasks.push({...t,listName:list.displayName}));
+    }
+    if (!tasks.length){el.innerHTML=`<div class="empty">🎉 All caught up!</div>`;return;}
+    el.innerHTML=tasks.slice(0,10).map(t=>{
+      const due=t.dueDateTime?new Date(t.dueDateTime.dateTime).toLocaleDateString('en-AE',{month:'short',day:'numeric'}):'';
+      return `<div class="task-item fade-in">
+        <div class="task-cb" onclick="this.classList.toggle('chk');this.closest('.task-item').querySelector('.task-title').classList.toggle('done')"></div>
+        <div><div class="task-title">${t.title}</div><div class="task-meta">${t.listName}${due?' · '+due:''}</div></div>
+      </div>`;
+    }).join('');
+  } catch(err){el.innerHTML=`<div class="empty">Could not load tasks</div>`;console.error(err);}
+}
+
+// ── AI ──
+async function loadAI() {
+  const el=document.getElementById('aiContent');
+  if (ANTHROPIC_API_KEY==='YOUR_ANTHROPIC_API_KEY_HERE') {
+    el.innerHTML=`<div class="ai-body"><div class="ai-sec"><div class="ai-sec-title">⚙️ Setup Required</div><div class="ai-text">Add your Anthropic API key in the CONFIG section of this file to enable AI daily briefings. Get a key at console.anthropic.com</div></div></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="loader"><span></span><span></span><span></span></div>`;
+  const now=new Date();
+  const calText=document.getElementById('calendarContent')?.innerText?.substring(0,400)||'Not connected';
+  const taskText=document.getElementById('tasksContent')?.innerText?.substring(0,300)||'Not connected';
+  const prompt=`You are a concise personal assistant for someone based in Dubai, UAE. Today is ${now.toLocaleDateString('en-AE',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}.
+Calendar today: ${calText}
+Open tasks: ${taskText}
+
+Return ONLY this HTML structure with real content filled in (no markdown, no backticks, no preamble):
+<div class="ai-body"><div class="ai-sec"><div class="ai-sec-title">🌅 FOCUS</div><div class="ai-text">Write 2-3 sentences on what to prioritize today and why, based on the calendar and tasks above.</div></div><div class="ai-sec"><div class="ai-sec-title">⚡ PRIORITIES</div><div class="focus-pills"><span class="focus-pill">Priority 1</span><span class="focus-pill">Priority 2</span><span class="focus-pill">Priority 3</span><span class="focus-pill">Priority 4</span></div></div><div class="ai-sec"><div class="ai-sec-title">💡 TIP</div><div class="ai-text">One sharp, practical tip for making today productive in Dubai.</div></div></div>`;
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    el.innerHTML=`<div class="fade-in">${d.content?.[0]?.text||'<div class="empty">Could not generate briefing</div>'}</div>`;
+  } catch { el.innerHTML=`<div class="empty">AI briefing unavailable</div>`; }
+}
+
+// ── INIT ──
+window.onload = async () => {
+  loadWeather();
+  loadNews();
+  await initMsal();
+  if (!currentUser) loadAI();
+};
+</script>
+</body>
+</html>
